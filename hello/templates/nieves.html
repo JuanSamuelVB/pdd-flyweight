@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+{% load staticfiles %}
+
+{% block content %}
+<div class="container">
+
+{% if menu %}
+<div class="pull-right">
+<h3>Menu</h3>
+  <table class="table table-bordered">
+    <thead>
+      <tr>
+        <th>Sabor</th>
+        <th>Precio</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for sabor in menu %}
+      <tr>
+        <td>{{ sabor }}</td>
+        <td>{{ sabor.precio }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% if total_o %}
+<div class="row" style="margin-bottom: 10px">
+  Numero de ordenes: {{ total_o }}
+</div>
+{% endif %}
+<div class="row" style="margin-bottom: 10px">
+  <form action="{% url 'nueva_orden' %}" class="pull-right">
+  <button type="submit" class="btn">Nueva orden</button>
+  </form>
+</div>
+<div class="row" style="margin-bottom: 10px">
+  <form action="{% url 'nueva_orden_num' '10' %}" class="pull-right">
+  <button type="submit" class="btn">Crear 10 ordenes</button>
+  </form>
+</div>
+</div>
+{% endif %}
+
+<div style="max-width: 80%">
+<h1><a href="{% url 'flyweight' %}">Nevería</a></h1>
+<p>Esta aplicación usa el patrón flyweight para insertar ordenes automaticamente. Al momento de inserción la diferencia entre usar el patrón o no no es mucha ya que la variación en los tiempos de inserción en la base de datos es mayor que el tiempo que se ahorra consultando registros con este patrón.</p>
+<p>En donde sí se pude ver la diferencia es cuando se quiere consultar una gran cantidad de ordenes de forma aleatoria, y de manera que algunas se repitan:</p>
+<ul>
+<li>
+  <p><a href="{% url 'ordenes' %}">Con flyweight</a></p>
+  {{ hello }}
+  {% if con_fw == True %}
+  <pre>
+# hello/flyweight.py
+
+<strong>class OrdenesFlyweightFactory(object):
+    def __init__(self):
+        self.__instances = dict()
+
+    def get_instance(self, pk):
+        if pk not in self.__instances:
+            self.__instances[pk] = Orden.objects.get(pk=pk)
+        return self.__instances[pk]</strong>
+  </pre>
+  <pre>
+# hello/views.py
+
+def ordenes(request):
+    ordenes = []
+    <strong>ordenes_fwf = OrdenesFlyweightFactory()</strong>
+
+    start = time.time()
+    for i in range(0, 2000):
+        num = randint(200, 1000)
+        <strong>orden = ordenes_fwf.get_instance(num)</strong>
+        ordenes.append(orden)
+    end = time.time()
+
+    ...</pre>
+  {% endif %}
+</li>
+<li>
+  <p><a href="{% url 'ordenes_no' %}">Sin flyweight</a></p>
+  {% if sin_fw %}
+  <pre>
+def ordenes_no(request):
+    ordenes = []
+    <strong>ords = Orden.objects.all()</strong>
+
+    start = time.time()
+    for i in range(0, 2000):
+        num = randint(200, 1000)
+        <strong>orden = ords.get(pk=num)</strong>
+        ordenes.append(orden)
+    end = time.time()
+
+    ...</pre>
+  {% endif %}
+</li>
+</ul>
+</div>
+
+<div>
+<h3>Ordenes</h3>
+{% if tiempo %}
+<div>
+<p>{{ num_o }} ordenes en {{ tiempo }} segundos</p>
+</div>
+{% endif %}
+<ol>
+{% for orden in ordenes %}
+<li>
+  <p><strong>Orden no. {{ orden.pk }}</strong></p>
+  <p>Cliente: {{ orden.cliente }}</p>
+  <p>Sabor: {{ orden.sabor }}</p>
+  <p>Cantidad: {{ orden.cantidad }}</p>
+  <p>Total: {{ orden.total }}</p>
+</li>
+{% endfor %}
+</div>
+</ol>
+
+</div>
+{% endblock %}
